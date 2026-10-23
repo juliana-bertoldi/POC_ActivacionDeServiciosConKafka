@@ -1,4 +1,10 @@
-import { ActivationStatus, type ActivationEvent, type SimulateFailure } from '@activation-poc/contracts'
+import {
+  ActivationStatus,
+  isActivationEvent,
+  type ActivationEvent,
+  type CreateActivationRequest,
+  type SimulateFailure,
+} from '@activation-poc/contracts'
 import { useEffect, useState, type FormEvent } from 'react'
 import { io } from 'socket.io-client'
 import './ActivationDashboard.css'
@@ -23,19 +29,6 @@ interface ApiActivation extends Partial<ActivationRecord> {
 
 const apiUrl = import.meta.env.VITE_ACTIVATION_API_URL ?? 'http://localhost:3000'
 const socketUrl = import.meta.env.VITE_ACTIVATION_SOCKET_URL ?? apiUrl
-const knownEvents = new Set([
-  'ActivationRequested', 'BillingAccountCreated', 'BillingFailed', 'BillingAccountCancelled',
-  'ProvisioningCompleted', 'ProvisioningFailed', 'ActivationCompleted', 'ActivationFailed',
-])
-
-function isActivationEvent(value: unknown): value is ActivationEvent {
-  if (!value || typeof value !== 'object') return false
-  const event = value as Partial<ActivationEvent>
-  return typeof event.correlationId === 'string'
-    && typeof event.eventType === 'string'
-    && knownEvents.has(event.eventType)
-}
-
 function getStatus(event: ActivationEvent, current: ActivationStatus): ActivationStatus {
   if (event.eventType === 'ActivationCompleted') return ActivationStatus.ACTIVE
   if (event.eventType === 'ActivationFailed') return ActivationStatus.FAILED
@@ -61,7 +54,7 @@ function appendEvent(records: ActivationRecord[], event: ActivationEvent): Activ
 
 function toActivation(data: ApiActivation, fallbackId: string): ActivationRecord {
   const result = data.activation ?? data
-  const events = result.events ?? result.history ?? []
+  const events = (result.events ?? result.history ?? []).filter(isActivationEvent)
   return {
     activationId: result.activationId ?? result.id ?? fallbackId,
     correlationId: result.correlationId ?? events[0]?.correlationId ?? fallbackId,
@@ -119,10 +112,11 @@ function App() {
     setBusy(true)
     setNotice('')
     try {
+      const request: CreateActivationRequest = { customerId, planId, simulateFailure, channel: 'web' }
       const response = await fetch(`${apiUrl}/activations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerId, planId, simulateFailure, channel: 'web' }),
+        body: JSON.stringify(request),
       })
       if (!response.ok) throw new Error(`La API respondió ${response.status}`)
       const data = await response.json() as ApiActivation

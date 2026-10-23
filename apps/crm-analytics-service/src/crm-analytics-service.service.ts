@@ -1,4 +1,4 @@
-import { TOPICS } from '@activation-poc/contracts';
+import { isActivationEvent, TOPICS } from '@activation-poc/contracts';
 import type { ActivationEvent } from '@activation-poc/contracts';
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Kafka, type KafkaMessage } from 'kafkajs';
@@ -11,7 +11,7 @@ interface EventLogRecord extends Document {
   eventType: string;
   correlationId: string;
   customerId: string;
-  version: number;
+  version: ActivationEvent['version'];
   occurredAt: string;
   source: string;
   payload: ActivationEvent['payload'];
@@ -21,33 +21,7 @@ interface EventLogRecord extends Document {
   recordedAt: Date;
 }
 
-const eventTypes = new Set([
-  'ActivationRequested',
-  'BillingAccountCreated',
-  'BillingFailed',
-  'BillingAccountCancelled',
-  'ProvisioningCompleted',
-  'ProvisioningFailed',
-  'ActivationCompleted',
-  'ActivationFailed',
-]);
 const businessTopics = Object.values(TOPICS);
-
-function isActivationEvent(value: unknown): value is ActivationEvent {
-  if (!value || typeof value !== 'object') return false;
-  const event = value as Partial<ActivationEvent>;
-  return typeof event.eventId === 'string'
-    && event.eventId.length > 0
-    && typeof event.eventType === 'string'
-    && eventTypes.has(event.eventType)
-    && typeof event.version === 'number'
-    && typeof event.occurredAt === 'string'
-    && typeof event.correlationId === 'string'
-    && typeof event.customerId === 'string'
-    && typeof event.source === 'string'
-    && typeof event.payload === 'object'
-    && event.payload !== null;
-}
 
 @Injectable()
 export class CrmAnalyticsServiceService implements OnModuleInit, OnModuleDestroy {

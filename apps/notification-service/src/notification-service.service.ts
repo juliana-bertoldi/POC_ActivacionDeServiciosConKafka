@@ -1,8 +1,8 @@
 import {
   DEAD_LETTER_TOPICS,
   TOPICS,
+  isActivationEvent,
   type ActivationCompletedEvent,
-  type ActivationEvent,
   type ActivationFailedEvent,
 } from '@activation-poc/contracts';
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
@@ -28,14 +28,8 @@ interface NotificationRecord extends Document {
 const retryDelaysMs = [1_000, 2_000, 4_000];
 
 function isNotificationEvent(value: unknown): value is NotificationEvent {
-  if (!value || typeof value !== 'object') return false;
-  const event = value as Partial<ActivationEvent>;
-  return typeof event.eventId === 'string'
-    && typeof event.correlationId === 'string'
-    && typeof event.customerId === 'string'
-    && (event.eventType === 'ActivationCompleted' || event.eventType === 'ActivationFailed')
-    && typeof event.payload === 'object'
-    && event.payload !== null;
+  return isActivationEvent(value)
+    && (value.eventType === 'ActivationCompleted' || value.eventType === 'ActivationFailed');
 }
 
 function escapeHtml(value: string): string {
