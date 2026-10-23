@@ -1,8 +1,13 @@
+import 'dotenv/config';
+import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { NotificationServiceModule } from './notification-service.module';
+import { NotificationServiceModule } from './notification-service.module.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(NotificationServiceModule);
-  await app.listen(process.env.port ?? 3000);
+  const app = await NestFactory.createApplicationContext(NotificationServiceModule, {
+    bufferLogs: true,
+  });
+  app.enableShutdownHooks();
 }
-bootstrap();
+
+void bootstrap();
