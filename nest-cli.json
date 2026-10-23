@@ -1,0 +1,38 @@
+{
+  "monorepo": true,
+  "root": "apps/activation-poc",
+  "sourceRoot": "apps/activation-poc/src",
+  "compilerOptions": {
+    "webpack": true,
+    "tsConfigPath": "apps/activation-poc/tsconfig.app.json"
+  },
+  "projects": {
+    "activation-poc": {
+      "type": "application",
+      "root": "apps/activation-poc",
+      "entryFile": "main",
+      "sourceRoot": "apps/activation-poc/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/activation-poc/tsconfig.app.json"
+      }
+    },
+    "notification-service": {
+      "type": "application",
+      "root": "apps/notification-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/notification-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/notification-service/tsconfig.app.json"
+      }
+    },
+    "crm-analytics-service": {
+      "type": "application",
+      "root": "apps/crm-analytics-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/crm-analytics-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/crm-analytics-service/tsconfig.app.json"
+      }
+    }
+  }
+}
