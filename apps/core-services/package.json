@@ -1,0 +1,23 @@
+{
+  "name": "@activation-poc/core-services",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start:dev": "nest start --watch"
+  },
+  "dependencies": {
+    "@activation-poc/contracts": "workspace:*",
+    "@activation-poc/kafka-toolkit": "workspace:*",
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0",
+    "@nestjs/platform-express": "^10.0.0",
+    "kafkajs": "^2.2.1",
+    "reflect-metadata": "^0.2.1",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.0.0",
+    "@nestjs/schematics": "^10.0.0"
+  }
+}
