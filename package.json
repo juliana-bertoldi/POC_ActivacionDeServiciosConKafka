@@ -1,0 +1,19 @@
+{
+  "name": "activation-poc",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20 <21"
+  },
+  "scripts": {
+    "build:contracts": "pnpm --filter @activation-poc/contracts build",
+    "typecheck:contracts": "pnpm --filter @activation-poc/contracts typecheck",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.10",
+    "typescript": "5.7.3"
+  }
+}
