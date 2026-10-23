@@ -54,7 +54,7 @@ export class NotificationServiceService implements OnModuleInit, OnModuleDestroy
   private readonly logger = new Logger(NotificationServiceService.name);
   private readonly kafka = new Kafka({
     clientId: process.env.KAFKA_CLIENT_ID ?? 'notification-service',
-    brokers: (process.env.KAFKA_BROKERS ?? 'localhost:9093').split(',').map((broker) => broker.trim()),
+    brokers: (process.env.KAFKA_BROKERS ?? 'localhost:9092').split(',').map((broker) => broker.trim()),
   });
   private readonly consumer = this.kafka.consumer({
     groupId: process.env.KAFKA_GROUP_ID ?? 'notification-service',
