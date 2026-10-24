@@ -22,12 +22,22 @@ export enum ActivationStatus {
   FAILED = 'FAILED',
 }
 
+export const EVENT_VERSION = 1 as const;
+export type EventVersion = typeof EVENT_VERSION;
+
 export type SimulateFailure = 'none' | 'billing' | 'provisioning';
+
+export interface CreateActivationRequest {
+  customerId: string;
+  planId: string;
+  simulateFailure: SimulateFailure;
+  channel: string;
+}
 
 export interface EventEnvelope<TPayload, TEventType extends string = string> {
   eventId: string;
   eventType: TEventType;
-  version: number;
+  version: EventVersion;
   occurredAt: string;
   correlationId: string;
   customerId: string;
@@ -39,7 +49,7 @@ export interface EventContext {
   activationId: string;
   customerId: string;
   source: string;
-  version?: number;
+  version?: EventVersion;
   occurredAt?: string;
   eventId?: string;
 }
@@ -100,6 +110,59 @@ export type ActivationEvent =
   | ActivationCompletedEvent
   | ActivationFailedEvent;
 
+type UnknownRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function hasString(record: UnknownRecord, key: string): boolean {
+  return typeof record[key] === 'string' && record[key].length > 0;
+}
+
+function isActivationPayload(eventType: string, payload: unknown): boolean {
+  if (!isRecord(payload)) return false;
+
+  switch (eventType) {
+    case 'ActivationRequested':
+      return hasString(payload, 'planId')
+        && hasString(payload, 'channel')
+        && (payload.simulateFailure === 'none'
+          || payload.simulateFailure === 'billing'
+          || payload.simulateFailure === 'provisioning');
+    case 'BillingAccountCreated':
+      return payload.accountStatus === 'CREATED';
+    case 'BillingFailed':
+      return hasString(payload, 'reason');
+    case 'BillingAccountCancelled':
+      return payload.accountStatus === 'CANCELLED' && hasString(payload, 'reason');
+    case 'ProvisioningCompleted':
+      return payload.status === 'COMPLETED';
+    case 'ProvisioningFailed':
+      return hasString(payload, 'reason');
+    case 'ActivationCompleted':
+      return payload.status === ActivationStatus.ACTIVE;
+    case 'ActivationFailed':
+      return (payload.failedStep === 'billing' || payload.failedStep === 'provisioning')
+        && hasString(payload, 'reason');
+    default:
+      return false;
+  }
+}
+
+export function isActivationEvent(value: unknown): value is ActivationEvent {
+  if (!isRecord(value)) return false;
+  if (value.version !== EVENT_VERSION || !hasString(value, 'eventId')) return false;
+  if (typeof value.occurredAt !== 'string' || !value.occurredAt || Number.isNaN(Date.parse(value.occurredAt))) {
+    return false;
+  }
+  if (!hasString(value, 'correlationId') || !hasString(value, 'customerId') || !hasString(value, 'source')) {
+    return false;
+  }
+  if (typeof value.eventType !== 'string') return false;
+  return isActivationPayload(value.eventType, value.payload);
+}
+
 function createEvent<TPayload, TEventType extends ActivationEvent['eventType']>(
   context: EventContext,
   eventType: TEventType,
@@ -108,7 +171,7 @@ function createEvent<TPayload, TEventType extends ActivationEvent['eventType']>(
   return {
     eventId: context.eventId ?? globalThis.crypto.randomUUID(),
     eventType,
-    version: context.version ?? 1,
+    version: context.version ?? EVENT_VERSION,
     occurredAt: context.occurredAt ?? new Date().toISOString(),
     correlationId: context.activationId,
     customerId: context.customerId,
