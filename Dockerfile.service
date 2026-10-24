@@ -1,0 +1,12 @@
+FROM node:20-alpine
+
+RUN corepack enable
+WORKDIR /workspace
+
+COPY . .
+RUN pnpm install --frozen-lockfile \
+  && pnpm --filter @activation-poc/contracts build \
+  && pnpm --filter @activation-poc/kafka-toolkit build
+
+ARG SERVICE
+CMD ["sh", "-c", "pnpm --filter ${SERVICE} --filter @activation-poc/${SERVICE} start:dev"]

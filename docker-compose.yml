@@ -91,5 +91,148 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  core-services:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: core-services
+    ports:
+      - "3000:3000"
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: core-services
+      KAFKA_GROUP_ID: core-services
+      MONGO_URI: mongodb://mongo:27017/activation_db?replicaSet=rs0
+      PORT: 3000
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
+
+  activation-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: activation-worker
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: activation-worker
+      KAFKA_GROUP_ID: activation-worker
+      MONGO_URI: mongodb://mongo:27017/activation_db?replicaSet=rs0
+      KAFKA_FROM_BEGINNING: "false"
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
+
+  billing-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: billing-service
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: billing-service
+      KAFKA_GROUP_ID: billing-service
+      MONGO_URI: mongodb://mongo:27017/activation_db?replicaSet=rs0
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
+
+  provisioning-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: provisioning-service
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: provisioning-service
+      KAFKA_GROUP_ID: provisioning-service
+      MONGO_URI: mongodb://mongo:27017/activation_db?replicaSet=rs0
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: notification-service
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: notification-service
+      KAFKA_GROUP_ID: notification-service
+      MONGO_URI: mongodb://mongo:27017/activation_db?replicaSet=rs0
+      MAILHOG_HOST: mailhog
+      MAILHOG_PORT: 1025
+      NOTIFICATION_FROM: notificaciones@activation-poc.local
+      NOTIFICATION_TO: cliente@demo.local
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+
+  crm-analytics-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: crm-analytics-service
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: crm-analytics-service
+      KAFKA_GROUP_ID: crm-analytics-service
+      KAFKA_FROM_BEGINNING: "false"
+      MONGO_URI: mongodb://mongo:27017/activation_db?replicaSet=rs0
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
+
+  loyalty-service:
+    profiles: ["loyalty"]
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: loyalty-service
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: loyalty-service
+      KAFKA_GROUP_ID: ${LOYALTY_KAFKA_GROUP_ID:-loyalty-service-replay}
+      MONGO_URI: mongodb://mongo:27017/activation_db?replicaSet=rs0
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
+
+  demo-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.demo-ui
+      args:
+        VITE_ACTIVATION_API_URL: http://localhost:3000
+        VITE_ACTIVATION_SOCKET_URL: http://localhost:3000
+    ports:
+      - "5173:80"
+    depends_on:
+      - core-services
+
 volumes:
   kafka-data:

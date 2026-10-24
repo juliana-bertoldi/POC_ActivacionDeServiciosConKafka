@@ -1,0 +1,7 @@
+.git
+node_modules
+**/node_modules
+**/dist
+**/.env
+**/coverage
+apps/demo-ui/package-lock.json

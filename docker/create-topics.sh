@@ -9,7 +9,7 @@ for topic in \
   provisioning.events \
   activation.events
  do
-  /opt/kafka/bin/kafka-topics.sh \
+  kafka-topics \
     --bootstrap-server "$bootstrap_server" \
     --create \
     --if-not-exists \
@@ -18,7 +18,7 @@ for topic in \
     --replication-factor 1 \
     --config retention.ms=604800000
 
-  /opt/kafka/bin/kafka-topics.sh \
+  kafka-topics \
     --bootstrap-server "$bootstrap_server" \
     --create \
     --if-not-exists \

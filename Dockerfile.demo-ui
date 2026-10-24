@@ -1,0 +1,16 @@
+FROM node:20-alpine AS build
+
+RUN corepack enable
+WORKDIR /workspace
+COPY . .
+RUN pnpm install --frozen-lockfile \
+  && pnpm --filter @activation-poc/contracts build
+
+ARG VITE_ACTIVATION_API_URL=http://localhost:3000
+ARG VITE_ACTIVATION_SOCKET_URL=http://localhost:3000
+ENV VITE_ACTIVATION_API_URL=${VITE_ACTIVATION_API_URL}
+ENV VITE_ACTIVATION_SOCKET_URL=${VITE_ACTIVATION_SOCKET_URL}
+RUN pnpm --filter demo-ui build
+
+FROM nginx:1.27-alpine
+COPY --from=build /workspace/apps/demo-ui/dist /usr/share/nginx/html
